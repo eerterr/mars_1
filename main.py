@@ -36,12 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=main_keyboard,
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}"
-    # if  requests.get(api_check_user).status_code == 200:
-    #     await update.message.reply_text(
-    #         "Вы уже зарегистрированы!",
-    #         reply_markup=main_keyboard,
-    #     )
-    #     return ConversationHandler.END
+   
     async with httpx.AsyncClient() as client:
         try:
             response_get_user = await client.get(api_check_user)
@@ -107,11 +102,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Доступные команды:\n/ask - задать вопрос\n/help - помощь",
         reply_markup=main_keyboard,
     )
-
-# async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     await update.message.reply_text(update.message.text, reply_markup=main_keyboard)
-
-
 
 WAITING_FOR_MESSAGE = 1
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
