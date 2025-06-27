@@ -36,7 +36,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=main_keyboard,
     )
     api_check_user = f"https://swpdb-production.up.railway.app/users/{update.effective_user.id}"
-   
+    # if  requests.get(api_check_user).status_code == 200:
+    #     await update.message.reply_text(
+    #         "Вы уже зарегистрированы!",
+    #         reply_markup=main_keyboard,
+    #     )
+    #     return ConversationHandler.END
     async with httpx.AsyncClient() as client:
         try:
             response_get_user = await client.get(api_check_user)
@@ -95,6 +100,19 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         del context.user_data['conv_id']
 
     return ConversationHandler.END
+async def cancel_for_asking(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    command = update.message.text.split()[0]  # Получаем команду (/help, /start и т. д.)
+
+    if command == "/help":
+        
+        await help_command(update, context)  # Предположим, что у вас есть функция help_command
+    elif command == "/start":
+        await start(update, context)
+    elif command == "/ask":
+        if 'conv_id' in context.user_data:
+            del context.user_data['conv_id']
+        return await ask(update, context)
+    return ConversationHandler.END
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -103,11 +121,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         reply_markup=main_keyboard,
     )
 
+# async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+#     await update.message.reply_text(update.message.text, reply_markup=main_keyboard)
+
+
+
 WAITING_FOR_MESSAGE = 1
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     ask_keyboard = ReplyKeyboardMarkup([["Отмена"]], resize_keyboard=True, one_time_keyboard=True)
     context.user_data['last_message'] = None
-    await update.message.reply_text("Напишите запрос:", reply_markup=main_keyboard)
+    await update.message.reply_text("Напишите запрос! Чтобы завершить диалог, выберите другую команду или нажните /cancel", reply_markup=main_keyboard)
     async with httpx.AsyncClient() as client:
         api_create_conv = "https://swpdb-production.up.railway.app/conversations/"
         payload_conv_json = {
@@ -174,7 +197,7 @@ def register_handlers():
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
-            MessageHandler(filters.Regex("^Отмена$"), cancel),
+            MessageHandler(filters.COMMAND, cancel_for_asking),
         ],
     )
     application.add_handler(ask_conv_handler)
